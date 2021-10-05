@@ -76,7 +76,7 @@ type segmentedBuffer struct {
 
 // NewSegmentedBuffer allocates a ring buffer.
 func newSegmentedBuffer(initialCapacity uint32) segmentedBuffer {
-	return segmentedBuffer{cap: initialCapacity, b: make([][]byte, 0)}
+	return segmentedBuffer{cap: initialCapacity}
 }
 
 // Len is the amount of data in the receive buffer.
@@ -116,8 +116,10 @@ func (s *segmentedBuffer) Read(b []byte) (int, error) {
 	n := copy(b, data)
 	if n == len(data) {
 		pool.Put(s.b[0])
-		s.b[0] = nil
-		s.b = s.b[1:]
+		length := len(s.b)
+		copy(s.b, s.b[1:length])
+		s.b[length-1] = nil
+		s.b = s.b[:length-1]
 		s.readPos = 0
 	} else {
 		s.readPos += n
